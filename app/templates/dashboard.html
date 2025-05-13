@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Password Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <header class="bg-white shadow p-4">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold">🔐 My Password Manager</h1>
+      <form action="{{ url_for('vault.logout') }}" method="POST">
+        <button type="submit" class="text-sm text-red-600">Logout</button>
+      </form>      
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto mt-6 px-4">
+    <div class="flex justify-between items-center mb-4">
+      <input id="searchInput" type="text" placeholder="Search..." class="px-4 py-2 border border-gray-300 rounded w-1/2" />
+      <a href="{{ url_for('vault.add_entry') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Add New</a>
+    </div>
+
+    <div class="overflow-x-auto bg-white rounded shadow">
+      <table class="min-w-full text-sm text-left" id="passwordTable">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="px-4 py-2">Brand</th>
+            <th class="px-4 py-2">App</th>
+            <th class="px-4 py-2">Username</th>
+            <th class="px-4 py-2">Email</th>
+            <th class="px-4 py-2">Login Link</th>
+            <th class="px-4 py-2">Password</th>
+            <th class="px-4 py-2">2FA</th>
+            <th class="px-4 py-2">Last Updated</th>
+            <th class="px-4 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}
+          <tr class="border-t">
+            <td class="px-4 py-2">{{ entry.brand }}</td>
+            <td class="px-4 py-2">{{ entry.app }}</td>
+            <td class="px-4 py-2">{{ entry.username }}</td>
+            <td class="px-4 py-2">{{ entry.email }}</td>
+            <td class="px-4 py-2">
+              <a href="{{ entry.login_link }}" target="_blank" class="text-blue-600 underline">Visit</a>
+            </td>
+            <td class="px-4 py-2">
+              <span class="password hidden">{{ entry.password_encrypted }}</span>
+              <span class="password-mask">••••••••</span>
+              <button onclick="togglePassword(this)" class="ml-2 text-blue-600 text-xs">Show</button>
+            </td>
+            <td class="px-4 py-2">
+              <span class="text-{{ 'green' if entry.twofa_enabled else 'red' }}-600">
+                {{ '✅' if entry.twofa_enabled else '❌' }}
+              </span>
+            </td>
+            <td class="px-4 py-2">{{ entry.last_updated }}</td>
+            <td class="px-4 py-2 space-x-2">
+              <a href="{{ url_for('vault.edit_entry', id=entry.id) }}" class="text-blue-600">Edit</a>
+              <form method="POST" action="{{ url_for('vault.delete_entry', id=entry.id) }}" class="inline">
+                <button type="submit" class="text-red-600">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    function togglePassword(button) {
+      const td = button.closest('td');
+      const masked = td.querySelector('.password-mask');
+      const real = td.querySelector('.password');
+      const isHidden = real.classList.contains('hidden');
+
+      if (isHidden) {
+        real.classList.remove('hidden');
+        masked.classList.add('hidden');
+        button.textContent = 'Hide';
+      } else {
+        real.classList.add('hidden');
+        masked.classList.remove('hidden');
+        button.textContent = 'Show';
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function () {
+      const value = this.value.toLowerCase();
+      const rows = document.querySelectorAll('#passwordTable tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(value) ? '' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>
